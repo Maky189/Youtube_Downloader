@@ -22,7 +22,17 @@ source myenv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Then just run the program
+3. Install FFmpeg:
+```bash
+# on windows:
+winget install -e --id Gyan.FFmpeg
+```
+```bash
+#on linux:
+sudo apt install ffmpeg
+```
+
+4. Then just run the program
 ```bash
 # on winows:
 python main.py
