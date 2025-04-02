@@ -98,7 +98,7 @@ def main():
                         print("Invalid choice. Please select a valid number.")
                         return
                     subtitle = list(available_subtitles)[lang_choice]
-                    subtitle_path = os.path.join(os.path.expanduser("~/Videos"), f"{title}.txt")
+                    subtitle_path = os.path.join(os.path.expanduser("~/Videos"), f"{title}.srt")
                     subtitle.save_captions(subtitle_path)
                     print("Subtitle downloaded!")
                 except ValueError:
