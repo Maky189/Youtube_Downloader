@@ -1,8 +1,34 @@
+# noinspection PyInterpreter
 from pytubefix import YouTube
 from pytubefix.cli import on_progress
 import os
 import re
 import subprocess
+
+def download_AudioOnly(yt, title, output_path):
+    try:
+        if not os.path.isdir(output_path):
+            print("Error: Invalid path.")
+            return
+
+        audio = yt.streams.get_audio_only()
+        print("Downloading audio...")
+        temp_filename = f"{title}_temp.{audio.subtype}"
+        tmpPath = os.path.join(output_path, temp_filename)
+        final_mp3 = os.path.join(output_path, f"{title}.mp3")
+
+        # Download with complete filename including extension
+        audio.download(output_path, filename=temp_filename)
+
+        ffmpeg_command = [
+            "ffmpeg", "-y", "-i", tmpPath, "-vn", "-ab", "192k", "-ar", "44100", "-f", "mp3", final_mp3
+        ]
+        subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        os.remove(tmpPath)
+        print("Audio downloaded.")
+
+    except Exception as e:
+        print(f"Occurred an Error: {e}")
 
 def download_video_and_audio(yt, title, output_path):
     try:
@@ -82,37 +108,50 @@ def main():
         # Display video title
         print(f"\nVideo Title: {yt.title}")
 
-        # Check for subtitles
-        if yt.captions:
-            print("\nSubtitles available:")
-            
+        choise = int(input("Video or Audio? (video/audio): \nVideo: 1\nAudio: 2\nChoise: "))
 
-            sub_choice = input("\nDo you wish to download the subtitles? (y/n): ").strip().lower()
-            if sub_choice in ("y", "yes"):
-                available_subtitles = yt.captions
-                for i, subtitle in enumerate(available_subtitles, start=1):
-                    print(f"{i}: {subtitle.code}")
-                try:
-                    lang_choice = int(input("Choose the language (number): ")) - 1
-                    if lang_choice < 0 or lang_choice >= len(available_subtitles):
-                        print("Invalid choice. Please select a valid number.")
+        if choise == 1:
+            # Check for subtitles
+            if yt.captions:
+                print("\nSubtitles available:")
+
+                sub_choice = input("\nDo you wish to download the subtitles? (y/n): ").strip().lower()
+                if sub_choice in ("y", "yes"):
+                    available_subtitles = yt.captions
+                    for i, subtitle in enumerate(available_subtitles, start=1):
+                        print(f"{i}: {subtitle.code}")
+                    try:
+                        lang_choice = int(input("Choose the language (number): ")) - 1
+                        if lang_choice < 0 or lang_choice >= len(available_subtitles):
+                            print("Invalid choice. Please select a valid number.")
+                            return
+                        subtitle = list(available_subtitles)[lang_choice]
+                        subtitle_path = os.path.join(os.path.expanduser("~/Videos"), f"{title}.srt")
+                        subtitle.save_captions(subtitle_path)
+                        print("Subtitle downloaded!")
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
                         return
-                    subtitle = list(available_subtitles)[lang_choice]
-                    subtitle_path = os.path.join(os.path.expanduser("~/Videos"), f"{title}.srt")
-                    subtitle.save_captions(subtitle_path)
-                    print("Subtitle downloaded!")
-                except ValueError:
-                    print("Invalid input. Please enter a number.")
-                    return
 
-        # Set download path
-        if os.name == "nt":
-            path = os.path.join(os.path.expanduser("~"), "Videos")
+            # Set download path
+            if os.name == "nt":
+                path = os.path.join(os.path.expanduser("~"), "Videos")
+            else:
+                path = os.path.expanduser("~/Videos")
+
+            # Download video and audio separately and merge them
+            download_video_and_audio(yt, title, path)
+
+        elif choise == 2:
+            if os.name == "nt":
+                path = os.path.join(os.path.expanduser("~"), "Music")
+            else:
+                path = os.path.expanduser("~/Music")
+
+            download_AudioOnly(yt, title, path)
+
         else:
-            path = os.path.expanduser("~/Videos")
-
-        # Download video and audio separately and merge them
-        download_video_and_audio(yt, title, path)
+            print("Invalid input. Please enter a valid choice.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
